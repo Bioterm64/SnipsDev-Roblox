@@ -3,6 +3,12 @@
 
 Use snippets in roblox through a module script. (Alpha)
 
+## Installation
+You may install them from the Marketplace: 
+https://create.roblox.com/store/asset/70557019570715/SnipsDev
+
+Or get the plugin from [here](/source/) and place it on your plugins folder.
+
 ## Usage
 To use this plugin, click on the `Manage Snippets` button in the plugins tab to open the editor. You must provide valid code that returns the following format:
 
