@@ -28,7 +28,7 @@ where as:
 
 - `description: string  (optional)`: The description of this snippet.
 
-- - `kind: Enum.CompletionItemKind | string  (optional)`: The kind of this snippet. (default: Enum.CompletionItemKind.Snippet). Example:
+- `kind: Enum.CompletionItemKind | string  (optional)`: The kind of this snippet. (default: Enum.CompletionItemKind.Snippet). Example:
 ```lua
 ['Clone Item'] = {
   prefix = "f_clone",
