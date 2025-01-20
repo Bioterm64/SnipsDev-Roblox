@@ -1,7 +1,7 @@
 <!-- Html tags in md? -->
 # <div style="display: flex; align-items: center"><img src="https://github.com/Bioterm64/SnipsDev-Roblox/blob/main/source/assets/logo.png?raw=true" height="64" style="margin-right: 1rem"><span>SnipsDev-Roblox</span></div>
 
-Use snippets in roblox through a module script.
+Use snippets in roblox through a module script. (Alpha)
 
 ## Usage
 To use this plugin, click on the `Manage Snippets` button in the plugins tab to open the editor. You must provide valid code that returns the following format:
@@ -11,13 +11,15 @@ To use this plugin, click on the `Manage Snippets` button in the plugins tab to 
   <snippet_entry: string> = {
     prefix: string
     body: string
-    description: string  (optional)
-    kind: Enum.CompletionItemKind | string  (optional)
+    description: string?
+    kind: (Enum.CompletionItemKind | string)?,
+    link: string?,
+    example: string?,
   },
   ...
 }
 ```
-where as: 
+where as:
 - `prefix: string`: The prefix of this snippet.
 
 - `body: string`: The snippet code to use. Example:
@@ -28,9 +30,10 @@ where as:
 }
 ```
 
-- `description: string  (optional)`: The description of this snippet.
+- `description: string?`: The description of this snippet.
+> `?` means optional for new devs. Example: `string?`
 
-- `kind: Enum.CompletionItemKind | string  (optional)`: The kind of this snippet. (default: Enum.CompletionItemKind.Snippet). Example:
+- `kind: (Enum.CompletionItemKind | string)?`: The kind of this snippet. (default: `Enum.CompletionItemKind.Snippet`). Example:
 ```lua
 ['Clone Item'] = {
   prefix = "f_clone",
@@ -46,7 +49,48 @@ end
   description = "Snippet of a clone function."
 }
 ```
-### Sample Code
+
+- `link: string?`: A link to the documentation in creator hub.
+> Note: It will not work when you provide other links besides from https://create.roblox.com/
+Example:
+```lua
+['Get the ReplicatedStorage'] = {
+  prefix = "g_replicated",
+  body = "local ReplicatedStorage = game:GetService("ReplicatedStorage")",
+  link = "https://create.roblox.com/docs/reference/engine/classes/ReplicatedStorage",
+},
+```
+
+- `example: string?`: An example on how this snippet should be used. (default: <this snippet's body>).
+Example: 
+```lua
+["Get Service: LocalPlayer"] = {
+	prefix = ":LocalPlayer",
+	body = "local LocalPlayer = game:GetService('LocalPlayer').LocalPlayer",
+	description = "Snippet for getting LocalPlayer",
+	example = [[
+local LocalPlayer = game:GetService('LocalPlayer').LocalPlayer
+
+LocalPlayer.CharacterAdded:Connect(function(character)
+	local head = character:FindFirstChild("Head")
+	head.Color3 = Color3.new(1, 0, 0)
+	-- do something else...
+end)
+]]
+}
+```
+
+### Summary
+| Name | Description |
+| ---- | ----------- |
+| `prefix` (required) | The prefix of the snippet. It will be used to auto-complete the snippet. |
+| `body` (required) | The snippet code to use. |
+| `description` | The description of this snippet. |
+| `kind` | The kind of this snippet. (default: `Enum.CompletionItemKind.Snippet`) |
+| `link` | A link to the documentation in creator hub. |
+| `example` | An example on how this snippet should be used. (default: `body`). 
+
+## Sample Code
 ```lua
 return {
   ['Get the ReplicatedStorage'] = {
@@ -64,7 +108,7 @@ return {
 }
 ```
 
-### Sample Code (Dynamic)
+### Dynamic Sample
 The snippets are stored in a module script and loaded with `require()`. Your snippets script will run and have undesired consequences. Because of that behavior, we can write dynamic snippets like this.
 ```lua
 -- This is free and unencumbered software released into the public domain.
