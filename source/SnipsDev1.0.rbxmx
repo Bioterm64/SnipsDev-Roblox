@@ -1,0 +1,1040 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Folder" referent="RBX626D99666AD64E4C9E08C2B1164B7815">
+		<Properties>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">SnipsDev</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="Script" referent="RBX0253008717E34928B71D81BC93832931">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<bool name="Disabled">false</bool>
+				<Content name="LinkedSource"><null></null></Content>
+				<string name="Name">Plugin</string>
+				<token name="RunContext">0</token>
+				<string name="ScriptGuid">{A05F707F-EC8E-4227-B1A4-7CBFBC92A52A}</string>
+				<ProtectedString name="Source"><![CDATA[-- Possible: description, kind (string)
+
+local Source = require(script.Parent:WaitForChild("Plugin.Source"))
+
+local Packages = script.Parent:WaitForChild("Modules")
+local Editor = require(Packages:WaitForChild("Editor"))
+local SnippetConfigureHandler = require(Packages:WaitForChild("SnippetConfigureHandler"))
+local AutoComplete = require(Packages:WaitForChild("AutoComplete"))
+local constants = require(Packages:WaitForChild("Constants"))
+
+local toolbar = plugin:CreateToolbar("SnipsDev")
+
+local buttons = {}
+
+for _, name in pairs({"manageButton", "resetButton", "enableButton"}) do
+	buttons[name] = toolbar:CreateButton(unpack(constants[name]))
+	buttons[name].ClickableWhenViewportHidden = true
+end
+
+AutoComplete:Initialize(plugin)
+SnippetConfigureHandler:Initialize(plugin)
+Source:Initialize(plugin)
+
+buttons.resetButton.Click:Connect(Source.onReset)
+buttons.enableButton.Click:Connect(Source.onEnabled)
+buttons.manageButton.Click:Connect(SnippetConfigureHandler.ShowConfigureSnippets) ]]></ProtectedString>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="ModuleScript" referent="RBX4B9C177CAA8B487C87EA40767CAFBE54">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<Content name="LinkedSource"><null></null></Content>
+				<string name="Name">Plugin.Source</string>
+				<string name="ScriptGuid">{3B441319-8644-4282-AE89-AAA173C77471}</string>
+				<ProtectedString name="Source"><![CDATA[local module = {}
+
+local Packages = script.Parent:WaitForChild("Modules")
+local Dialog = require(Packages:WaitForChild("ConfirmDialog"))
+local AutoComplete = require(Packages:WaitForChild("AutoComplete"))
+local SnippetConfigureHandler = require(Packages:WaitForChild("SnippetConfigureHandler"))
+local Editor = require(Packages:WaitForChild("Editor"))
+
+local ScriptEditorService = game:GetService("ScriptEditorService")
+
+local function resetSnippets()
+	if SnippetConfigureHandler.editor_script_proxy then
+		SnippetConfigureHandler.editor_script_proxy:CloseAsync()
+		task.delay(0.1, Editor.Close)
+	end
+
+	module.plugin:SetSetting("raw code", nil)
+	AutoComplete:ReloadSnippets()
+	warn("[SnipsDev]: All snippets are reset.")
+	
+end
+
+function module:Initialize(plugin)
+	module.plugin = plugin
+
+	AutoComplete:Unregister()
+	if module.plugin:GetSetting("enabled") then
+		AutoComplete:Register()
+	end
+end
+
+function module.onReset()
+	if not Dialog:GetInit() then
+		Dialog:Init(module.plugin, false)
+	end
+
+	Dialog:Show(
+		"Are you sure to reset your snippets?\nYou cannot undo this operation!", 
+		"Confirm Reset",
+		resetSnippets
+	)
+end
+
+function module.onEnabled()
+	local enabled = not (module.plugin:GetSetting("enabled") or false)
+	module.plugin:SetSetting("enabled", enabled)
+
+	if enabled then
+		AutoComplete:Register()
+	else
+		AutoComplete:Unregister()
+	end
+
+	warn("[SnipsDev]: Snippets typehinting mode:", enabled)
+end
+
+
+return module
+]]></ProtectedString>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="Folder" referent="RBX60DD983CDECE4283A9FF136C57C36F4D">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Modules</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="ModuleScript" referent="RBXF33FAB5DBB2940B5943DC0DEF73EC844">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<string name="Name">ConfirmDialog</string>
+					<string name="ScriptGuid">{D5ACEA25-91B7-4649-9640-634781113FC5}</string>
+					<ProtectedString name="Source"><![CDATA[local module = {
+	init = false
+}
+local source = require(script:WaitForChild("Source"))
+
+--[[
+Show a confirm dialog to the developer.
+
+Parameters:
+> message: string
+-- The message to show to the developer.
+
+> confirm_callback: () -> () [default: nil] 
+-- The callback function when the user confirms the choice.
+
+> cancel_callback: () -> () [default: nil]
+-- The callback function when the user cancels the choice.
+]]
+function module:Show(message: string, confirm_callback: () -> (), cancel_callback: () -> ())
+	source:Show(message, confirm_callback, cancel_callback)
+end
+
+--[[
+Initialize the module
+
+Parameters:
+> plugin: Plugin
+-- Since the plugin object is not available to module scripts, we will pass it instead
+]]
+function module:Init(plugin: Plugin, hide_widget: boolean)
+	source:Init(plugin, hide_widget)	
+	module.init = true
+end
+
+--[[
+Get if this module has initialized.
+]]
+function module:GetInit()
+	return module.init
+end
+
+return module]]></ProtectedString>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="Frame" referent="RBX7A2483BB57464007A13D26C717C59789">
+					<Properties>
+						<bool name="Active">false</bool>
+						<Vector2 name="AnchorPoint">
+							<X>0</X>
+							<Y>0</Y>
+						</Vector2>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<bool name="AutoLocalize">true</bool>
+						<token name="AutomaticSize">0</token>
+						<Color3 name="BackgroundColor3">
+							<R>0.180392161</R>
+							<G>0.180392161</G>
+							<B>0.180392161</B>
+						</Color3>
+						<float name="BackgroundTransparency">0</float>
+						<Color3 name="BorderColor3">
+							<R>0</R>
+							<G>0</G>
+							<B>0</B>
+						</Color3>
+						<token name="BorderMode">0</token>
+						<int name="BorderSizePixel">0</int>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="ClipsDescendants">false</bool>
+						<bool name="DefinesCapabilities">false</bool>
+						<bool name="Draggable">false</bool>
+						<bool name="Interactable">true</bool>
+						<int name="LayoutOrder">0</int>
+						<string name="Name">DialogFrame</string>
+						<Ref name="NextSelectionDown">null</Ref>
+						<Ref name="NextSelectionLeft">null</Ref>
+						<Ref name="NextSelectionRight">null</Ref>
+						<Ref name="NextSelectionUp">null</Ref>
+						<UDim2 name="Position">
+							<XS>0</XS>
+							<XO>0</XO>
+							<YS>0</YS>
+							<YO>0</YO>
+						</UDim2>
+						<Ref name="RootLocalizationTable">null</Ref>
+						<float name="Rotation">0</float>
+						<bool name="Selectable">false</bool>
+						<token name="SelectionBehaviorDown">0</token>
+						<token name="SelectionBehaviorLeft">0</token>
+						<token name="SelectionBehaviorRight">0</token>
+						<token name="SelectionBehaviorUp">0</token>
+						<bool name="SelectionGroup">false</bool>
+						<Ref name="SelectionImageObject">null</Ref>
+						<int name="SelectionOrder">0</int>
+						<UDim2 name="Size">
+							<XS>1</XS>
+							<XO>0</XO>
+							<YS>1</YS>
+							<YO>0</YO>
+						</UDim2>
+						<token name="SizeConstraint">0</token>
+						<int64 name="SourceAssetId">-1</int64>
+						<token name="Style">0</token>
+						<BinaryString name="Tags"></BinaryString>
+						<bool name="Visible">true</bool>
+						<int name="ZIndex">1</int>
+					</Properties>
+					<Item class="TextLabel" referent="RBX2454371178934C9AAC92173765B82959">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">1</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="DefinesCapabilities">false</bool>
+							<bool name="Draggable">false</bool>
+							<Font name="FontFace">
+								<Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family>
+								<Weight>400</Weight>
+								<Style>Normal</Style>
+								<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>
+							</Font>
+							<bool name="Interactable">true</bool>
+							<int name="LayoutOrder">0</int>
+							<float name="LineHeight">1</float>
+							<string name="LocalizationMatchIdentifier"></string>
+							<string name="LocalizationMatchedSourceText"></string>
+							<int name="MaxVisibleGraphemes">-1</int>
+							<string name="Name">Message</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<string name="OpenTypeFeatures"></string>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<bool name="RichText">false</bool>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<token name="SelectionBehaviorDown">0</token>
+							<token name="SelectionBehaviorLeft">0</token>
+							<token name="SelectionBehaviorRight">0</token>
+							<token name="SelectionBehaviorUp">0</token>
+							<bool name="SelectionGroup">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<int name="SelectionOrder">0</int>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>1</YS>
+								<YO>-55</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+							<string name="Text">Some Message Here</string>
+							<Color3 name="TextColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<token name="TextDirection">0</token>
+							<bool name="TextScaled">false</bool>
+							<float name="TextSize">16</float>
+							<Color3 name="TextStrokeColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<float name="TextStrokeTransparency">1</float>
+							<float name="TextTransparency">0</float>
+							<token name="TextTruncate">0</token>
+							<bool name="TextWrapped">false</bool>
+							<token name="TextXAlignment">2</token>
+							<token name="TextYAlignment">1</token>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+						<Item class="UIPadding" referent="RBX317747E6817D414D9EBEC0F695095023">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<string name="Name">UIPadding</string>
+								<UDim name="PaddingBottom">
+									<S>0</S>
+									<O>8</O>
+								</UDim>
+								<UDim name="PaddingLeft">
+									<S>0</S>
+									<O>8</O>
+								</UDim>
+								<UDim name="PaddingRight">
+									<S>0</S>
+									<O>8</O>
+								</UDim>
+								<UDim name="PaddingTop">
+									<S>0</S>
+									<O>8</O>
+								</UDim>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+					</Item>
+					<Item class="TextButton" referent="RBX70DD81DC607C4F139E7CDEA28B77DA66">
+						<Properties>
+							<bool name="Active">true</bool>
+							<Vector2 name="AnchorPoint">
+								<X>1</X>
+								<Y>1</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoButtonColor">false</bool>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>0</R>
+								<G>0.635294139</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">0</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="DefinesCapabilities">false</bool>
+							<bool name="Draggable">false</bool>
+							<Font name="FontFace">
+								<Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family>
+								<Weight>400</Weight>
+								<Style>Normal</Style>
+								<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>
+							</Font>
+							<bool name="Interactable">true</bool>
+							<int name="LayoutOrder">0</int>
+							<float name="LineHeight">1</float>
+							<string name="LocalizationMatchIdentifier"></string>
+							<string name="LocalizationMatchedSourceText"></string>
+							<int name="MaxVisibleGraphemes">-1</int>
+							<bool name="Modal">false</bool>
+							<string name="Name">No</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<string name="OpenTypeFeatures"></string>
+							<UDim2 name="Position">
+								<XS>1</XS>
+								<XO>-16</XO>
+								<YS>1</YS>
+								<YO>-16</YO>
+							</UDim2>
+							<bool name="RichText">false</bool>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">true</bool>
+							<bool name="Selected">false</bool>
+							<token name="SelectionBehaviorDown">0</token>
+							<token name="SelectionBehaviorLeft">0</token>
+							<token name="SelectionBehaviorRight">0</token>
+							<token name="SelectionBehaviorUp">0</token>
+							<bool name="SelectionGroup">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<int name="SelectionOrder">0</int>
+							<UDim2 name="Size">
+								<XS>0</XS>
+								<XO>96</XO>
+								<YS>0</YS>
+								<YO>25</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<token name="Style">0</token>
+							<BinaryString name="Tags"></BinaryString>
+							<string name="Text">No</string>
+							<Color3 name="TextColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<token name="TextDirection">0</token>
+							<bool name="TextScaled">false</bool>
+							<float name="TextSize">16</float>
+							<Color3 name="TextStrokeColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<float name="TextStrokeTransparency">1</float>
+							<float name="TextTransparency">0</float>
+							<token name="TextTruncate">0</token>
+							<bool name="TextWrapped">false</bool>
+							<token name="TextXAlignment">2</token>
+							<token name="TextYAlignment">1</token>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+					</Item>
+					<Item class="TextButton" referent="RBXC9599FA98BB44977A97E4A1E2B7900FF">
+						<Properties>
+							<bool name="Active">true</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>1</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoButtonColor">false</bool>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>0.235294119</R>
+								<G>0.235294119</G>
+								<B>0.235294119</B>
+							</Color3>
+							<float name="BackgroundTransparency">0</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0.666666687</G>
+								<B>1</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="DefinesCapabilities">false</bool>
+							<bool name="Draggable">false</bool>
+							<Font name="FontFace">
+								<Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family>
+								<Weight>400</Weight>
+								<Style>Normal</Style>
+								<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>
+							</Font>
+							<bool name="Interactable">true</bool>
+							<int name="LayoutOrder">0</int>
+							<float name="LineHeight">1</float>
+							<string name="LocalizationMatchIdentifier"></string>
+							<string name="LocalizationMatchedSourceText"></string>
+							<int name="MaxVisibleGraphemes">-1</int>
+							<bool name="Modal">false</bool>
+							<string name="Name">Yes</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<string name="OpenTypeFeatures"></string>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>16</XO>
+								<YS>1</YS>
+								<YO>-16</YO>
+							</UDim2>
+							<bool name="RichText">false</bool>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">true</bool>
+							<bool name="Selected">false</bool>
+							<token name="SelectionBehaviorDown">0</token>
+							<token name="SelectionBehaviorLeft">0</token>
+							<token name="SelectionBehaviorRight">0</token>
+							<token name="SelectionBehaviorUp">0</token>
+							<bool name="SelectionGroup">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<int name="SelectionOrder">0</int>
+							<UDim2 name="Size">
+								<XS>0</XS>
+								<XO>96</XO>
+								<YS>0</YS>
+								<YO>25</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<token name="Style">0</token>
+							<BinaryString name="Tags"></BinaryString>
+							<string name="Text">Yes</string>
+							<Color3 name="TextColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<token name="TextDirection">0</token>
+							<bool name="TextScaled">false</bool>
+							<float name="TextSize">16</float>
+							<Color3 name="TextStrokeColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<float name="TextStrokeTransparency">1</float>
+							<float name="TextTransparency">0</float>
+							<token name="TextTruncate">0</token>
+							<bool name="TextWrapped">false</bool>
+							<token name="TextXAlignment">2</token>
+							<token name="TextYAlignment">1</token>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+					</Item>
+				</Item>
+				<Item class="ModuleScript" referent="RBX51F8BF02E08846C9ACD0FA820A3D5D14">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">Source</string>
+						<string name="ScriptGuid">{CDD45DE1-ACAE-49DE-8CBD-ABCD2182DB5C}</string>
+						<ProtectedString name="Source"><![CDATA[local module = {}
+
+local widget = nil
+local DialogFrame = nil
+
+function module:Init(plugin, hide_widget)
+	local widgetInfo = DockWidgetPluginGuiInfo.new(
+		Enum.InitialDockState.Float, true, true, 300, 150, 200, 100
+	)
+
+	widget = plugin:CreateDockWidgetPluginGui("ConfirmDialog", widgetInfo)
+	widget.Enabled = not (hide_widget or true)
+	
+	DialogFrame = script.Parent["DialogFrame"]
+	DialogFrame.Parent = widget
+	
+	DialogFrame.No.MouseEnter:Connect(function()
+		DialogFrame.No.BackgroundColor3 = Color3.fromHex("#35b5ff")
+	end)
+	
+	DialogFrame.No.MouseLeave:Connect(function()
+		DialogFrame.No.BackgroundColor3 = Color3.fromHex("#00a2ff")
+	end)
+	
+	DialogFrame.Yes.MouseEnter:Connect(function()
+		DialogFrame.Yes.BackgroundColor3 = Color3.fromHex("#424242")
+	end)
+	
+	DialogFrame.Yes.MouseLeave:Connect(function()
+		DialogFrame.Yes.BackgroundColor3 = Color3.fromHex("#3c3c3c")
+	end)
+end
+
+local event_confirm = nil
+local event_cancel = nil
+
+local function resetBindableEvents()
+	if event_confirm then
+		event_confirm:Disconnect()
+	end
+
+	if event_cancel then
+		event_cancel:Disconnect()
+	end
+end
+
+function module:Show(message, title, confirm_callback, cancel_callback)	
+	DialogFrame.Message.Text = message
+	widget.Title = title or "Confirm Operation"
+	widget.Enabled = true
+
+	resetBindableEvents()
+
+	event_confirm = DialogFrame.Yes.MouseButton1Click:Connect(function()
+		widget.Enabled = false
+		
+		if not confirm_callback then return end
+		confirm_callback()
+	end)
+
+	event_cancel = DialogFrame.No.MouseButton1Click:Connect(function()
+		widget.Enabled = false
+		
+		if not cancel_callback then return end
+		cancel_callback()
+	end)
+end
+
+return module]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+			</Item>
+			<Item class="ModuleScript" referent="RBXD0AAD0520B8E441889E3509D0BA6EAD6">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<string name="Name">Constants</string>
+					<string name="ScriptGuid">{4C753612-787B-4B2F-BA9B-7387AE43FB69}</string>
+					<ProtectedString name="Source"><![CDATA[return {
+	header = 
+
+[===[
+-- SnipsDev 1.0
+
+-- View github page for more details.
+-- https://github.com/Bioterm64/SnipsDev-Roblox
+
+return {}
+
+]===],
+
+	manageButton = {
+		"Manage",
+		"Manage your snippets",
+		
+		-- image from @mindauge3 (https://www.roblox.com/users/512975950/profile)
+		"rbxassetid://132848201849699"
+	},
+	
+	resetButton = {
+		"Reset Snippets",
+		"Reset your snippets to default",
+		
+		-- image from @CriticalDucky (https://www.roblox.com/users/143610471/profile)
+		"rbxassetid://9613508061"
+	},
+
+	enableButton = {
+		"Toggle Snippets",
+		"Enable/Disable Snippets Typehinting",
+		
+		-- image from @export_types (https://www.roblox.com/users/205626387/profile)
+		"rbxassetid://98830532951053"
+	},
+	
+	registry_name = "snipsdev@EFiryBoi"
+}]]></ProtectedString>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX15F5BD3A14D941FA8165119541D5AACA">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<string name="Name">Editor</string>
+					<string name="ScriptGuid">{68F4CCD5-4024-4458-8F31-426C3D3B72D4}</string>
+					<ProtectedString name="Source"><![CDATA[local module = {}
+
+local ServerStorage = game:GetService("ServerStorage")
+local temp_folder_name = "_$tmp"
+
+local function createTemporaryFolder()
+	local duplicate = ServerStorage:FindFirstChild(temp_folder_name)
+	if duplicate then return duplicate end
+	
+	local temp_path = Instance.new("Folder")
+	temp_path.Parent = ServerStorage
+	temp_path.Name = temp_folder_name
+	
+	return temp_path
+end
+
+function module:CreateBlankEditor(name)
+	local folder = createTemporaryFolder()
+	
+	local duplicate = folder:FindFirstChild(name)
+	if duplicate then return duplicate end
+	
+	local moduleScript = Instance.new("ModuleScript")
+	moduleScript.Name = name
+	moduleScript.Parent = folder
+	
+	return moduleScript
+end
+
+function module:Close()
+	for _, item in pairs(ServerStorage:GetChildren()) do
+		if not item:IsA("Folder") then continue end
+		if item.Name ~= temp_folder_name then continue end
+		
+		item:Destroy()
+	end
+end
+
+return module
+]]></ProtectedString>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX09417AE37CCC4868933CB708F5452AC1">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<string name="Name">AutoComplete</string>
+					<string name="ScriptGuid">{9D27635C-EC33-49FE-869C-BBD039868E73}</string>
+					<ProtectedString name="Source"><![CDATA[local ScriptEditorService = game:GetService("ScriptEditorService")
+
+local SnippetParser = require(script.Parent:WaitForChild("SnippetParser"))
+local constants = require(script.Parent.Constants)
+local _types = require(script.Types)
+
+local module = {}
+local snippets = {}
+
+function module:Initialize(plugin)
+	module.plugin = plugin
+end
+
+local function IsAValidEnding(char)
+	-- A space, tab or nothing
+	return char == " " or char == "	" or char == ""
+end
+
+local function getEnd(line: string, start_pos)
+	start_pos = start_pos - 1
+	
+	while start_pos >= 1 do
+		if IsAValidEnding(line:sub(start_pos, start_pos)) then return start_pos end
+		start_pos += -1
+	end
+	
+	return 0
+end
+
+function module.autoCompleteCallback(request: _types.Request, response: _types.Response): Response
+	local cursorPosition = request.position
+	
+	local line: string = request.textDocument.document:GetLine(cursorPosition.line)
+	local start = getEnd(line, cursorPosition.character) + 1
+
+	for snippet_label, details: _types.SnippetData in pairs(snippets) do
+		if details.prefix:sub(1, 1) ~= line:sub(start, start) then continue end
+		
+		local snippet_kind = details.kind
+		if type(snippet_kind) == "string" then 
+			snippet_kind = Enum.CompletionItemKind[snippet_kind] 
+		end
+		
+		local item: _types.ResponseItem = {
+			label = details.prefix,
+			kind = snippet_kind,
+			preselect = true,
+			textEdit = {
+				newText = details.body,
+				replace = {
+					start = {
+						line = cursorPosition.line,
+						character = start
+					}, 
+					['end'] = {
+						line = cursorPosition.line,
+						character = cursorPosition.character,
+					}
+				},
+			},
+			documentation = {
+				value = details.description or nil
+			},
+			detail = snippet_label or nil,
+			codeSample = details.body,
+		}
+		
+		table.insert(response.items, item)
+	end
+	
+	return response
+end
+
+function module:ReloadSnippets()
+	if not module.plugin:GetSetting("enabled") then return end
+	--warn("[SnipsDev]: Reloading Snippets")
+	snippets = SnippetParser:GetSnippetData(module.plugin:GetSetting("raw code")) or {}
+end
+
+function module:Register()
+	ScriptEditorService:RegisterAutocompleteCallback(
+		constants.registry_name, 1, module.autoCompleteCallback
+	)
+	module:ReloadSnippets()
+end
+
+function module:Unregister()
+	pcall(function()
+		ScriptEditorService:DeregisterAutocompleteCallback(
+			constants.registry_name
+		)
+	end)
+end
+
+return module
+]]></ProtectedString>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="ModuleScript" referent="RBX0C36B3907CC047CE9436E532603218FB">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">Types</string>
+						<string name="ScriptGuid">{12061404-5DAC-45B2-B39B-0DCBBCA91944}</string>
+						<ProtectedString name="Source"><![CDATA[export type Request = {
+	position: {
+		line: number,
+		character: number,
+	},
+	textDocument: {
+		document: ScriptDocument?,
+		script: LuaSourceContainer?,
+	},
+}
+
+export type ResponseItem = {
+	label: string,
+	kind: Enum.CompletionItemKind?,
+	tags: { Enum.CompletionItemTag }?,
+	detail: string?,
+	documentation: {
+		value: string,
+	}?,
+	overloads: number?,
+	learnMoreLink: string?,
+	codeSample: string?,
+	preselect: boolean?,
+	textEdit: {
+		newText: string,
+		replace: {
+			start: { line: number, character: number },
+			["end"]: { line: number, character: number },
+		},
+	}?,
+}
+
+export type Response = {
+	items: ResponseItem
+}
+
+export type SnippetData = {
+	prefix: string,
+	body: string,
+	kind: (string | Enum.CompletionItemKind)?,
+	description: string?
+}
+
+return {}]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+			</Item>
+			<Item class="ModuleScript" referent="RBXBB147FF9BAA0448F9F23E9689CDA1CB0">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<string name="Name">SnippetParser</string>
+					<string name="ScriptGuid">{9C5140B6-F5F2-4448-AE01-2CC87DDFB747}</string>
+					<ProtectedString name="Source"><![CDATA[local module = {}
+
+function module:GetSnippetData(raw_code: string)
+	if raw_code == nil then
+		return nil
+	end
+	
+	local moduleScript = Instance.new("ModuleScript")
+	moduleScript.Source = raw_code
+	
+	local success, data = xpcall(function()
+		return require(moduleScript)
+	end, function()
+		warn("[SnipsDev]: Failed to load snippets")
+		return nil
+	end)
+	
+	return data
+end
+
+return module
+]]></ProtectedString>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX248D7CA8C9834217B5412411CE70A10D">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<string name="Name">SnippetConfigureHandler</string>
+					<string name="ScriptGuid">{910F2D60-003D-4BF4-A914-713B9C42E4F8}</string>
+					<ProtectedString name="Source"><![CDATA[local ScriptEditorService = game:GetService("ScriptEditorService")
+
+local Packages = script.Parent
+local Editor = require(Packages:WaitForChild("Editor"))
+local AutoComplete = require(Packages:WaitForChild("AutoComplete"))
+local constants = require(Packages:WaitForChild("Constants"))
+
+local module = {}
+
+function module:Initialize(plugin)
+	module.plugin = plugin
+end
+
+local listeners = {}
+local text = ""
+module.editor_script = nil
+module.editor_script_proxy = nil
+
+local function removeListeners()
+	for _, item in pairs(listeners) do item:Disconnect() end
+	table.clear(listeners)
+end
+
+local function addListeners()
+	if #listeners > 0 then return end
+
+	listeners[1] = ScriptEditorService.TextDocumentDidChange
+		:Connect(function(currentEditor)
+			if currentEditor ~= module.editor_script_proxy then return end
+			text = currentEditor:GetText()
+			module.plugin:SetSetting("raw code", text)
+			
+			AutoComplete:ReloadSnippets()
+		end)
+
+	listeners[2] = ScriptEditorService.TextDocumentDidClose
+		:Connect(function(currentEditor)
+			if currentEditor ~= module.editor_script_proxy then return end
+			module.plugin:SetSetting("raw code", text)
+			
+			removeListeners()
+			module.editor_script = nil
+			module.editor_script_proxy = nil
+			
+			Editor:Close()
+			
+			AutoComplete:ReloadSnippets()
+			
+			--warn("[SnipsDev][Debug]: Closed editor")
+		end)
+end
+
+function module.ShowConfigureSnippets()
+	module.editor_script = Editor:CreateBlankEditor("Edit Snippets")
+
+	local code = module.plugin:GetSetting("raw code")
+	module.editor_script.Source = code or constants.header
+
+	addListeners()
+	module.plugin:OpenScript(module.editor_script)
+	
+	task.defer(function()
+		local document = ScriptEditorService:FindScriptDocument(module.editor_script)
+		while not document do
+			wait()
+			document = ScriptEditorService:FindScriptDocument(module.editor_script)
+		end
+
+		module.editor_script_proxy = document
+	end)
+end
+
+return module
+]]></ProtectedString>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+		</Item>
+	</Item>
+</roblox>
