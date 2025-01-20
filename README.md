@@ -1,4 +1,6 @@
-# SnipsDev-Roblox
+<!-- Html tags in md? -->
+# <div style="display: flex; align-items: center"><img src="https://github.com/Bioterm64/SnipsDev-Roblox/blob/main/source/assets/logo.png?raw=true" height="64" style="margin-right: 1rem"><span>SnipsDev-Roblox</span></div>
+
 Use snippets in roblox through a module script.
 
 ## Usage
