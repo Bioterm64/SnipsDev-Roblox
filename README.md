@@ -117,3 +117,6 @@ Incase I don't merge them in the main branch (since I'm busy), just check people
 
 # Purpose of this project
 Since I can't really find a snippet plugin that is free and also this easy, I created this on my own. :)
+
+## Notes
+SnipsDev was not made on rojo, but Roblox Studio itself. So, reading the source code will be complicated.
