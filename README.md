@@ -161,5 +161,4 @@ return snippets
 ```
 
 ### Purpose of the Project
-This project is to provide a much flexible, easy, and managable way to write your snippets through code.
-It is a skill issue to make a such complicated and unmaintainable code.
+This project aims to provide a more flexible, easy, and manageable way to write code snippets. Since most available options in the marketplace are either poorly written or paid, I decided to create this project for both myself and others to enjoy the simplicity of coding. Writing overly complicated and unmaintainable code is simply a **skill issue**.
