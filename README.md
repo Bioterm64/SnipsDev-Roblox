@@ -160,14 +160,6 @@ end
 return snippets
 ```
 
-## Presets
-Presets are available in this github page in the [presets](/presets/) folder.
-Feel free to contribute your own presets.
-
-Incase I don't merge them in the main branch (since I'm busy), just check people's presets in the `pull requests` tab in this github page.
-
-# Purpose of this project
-Since I can't really find a snippet plugin that is free and also this easy, I created this on my own. :)
-
-## Notes
-SnipsDev was not made on rojo, but Roblox Studio itself. So, reading the source code will be complicated.
+### Purpose of the Project
+This project is to provide a much flexible, easy, and managable way to write your snippets through code.
+It is a skill issue to make a such complicated and unmaintainable code.
