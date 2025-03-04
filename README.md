@@ -58,6 +58,7 @@ end
 
 - `link: string?`: A link to the documentation in creator hub.
 > Note: It will not work when you provide other links besides from https://create.roblox.com/
+
 Example:
 ```lua
 ['Get the ReplicatedStorage'] = {
