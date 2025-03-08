@@ -1,7 +1,7 @@
 <!-- Html tags in md? -->
 # <div style="display: flex; align-items: center"><img src="https://github.com/Bioterm64/SnipsDev-Roblox/blob/main/source/assets/logo.png?raw=true" height="64" style="margin-right: 1rem"><span>SnipsDev-Roblox</span></div>
 
-Easily use snippets in Roblox through a Module Script (Alpha).
+Easily manage snippets in Roblox through a Module Script (Beta).
 
 ## Installation
 You may install them from the Marketplace: 
